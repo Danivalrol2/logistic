@@ -1,0 +1,168 @@
+---
+title: "Pronostico Demanda"
+author: "Pilar Prado"
+date: "24/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## UNIVERSIDAD CATOLICA BOLIVIANA "SAN PABLO"
+
+![Caption for the picture.](catolica.jpg)
+
+
+# GRUPO DE TRABAJO:
+
+## Pilar Prado
+## Daniela Valdivia
+
+# . 
+
+# .
+
+
+
+## PROBLEMA:  SE REQUIERE HACER UN PRONOSTICO DE DEMANDA DE UNA EMPRESA DE DELIVERY
+
+
+### El cliente es una empresa de entrega de comidas que opera en varias ciudades. Tienen varios centros logísticos en estas ciudades para enviar pedidos de comida a sus clientes. El cliente quiere un pronóstico de la demanda para las próximas semanas para que estos centros planifiquen el stock de materias primas.
+
+### La reposición de la mayoría de las materias primas se realiza semanalmente y, dado que la materia prima es perecedera, la planificación de las adquisiciones es de suma importancia. 
+
+
+## DATA SET
+
+```{r}
+library(readr)
+library(ggplot2)
+
+train <- read_csv("D:/TRABAJOR/train.csv")
+
+test <- read_csv("D:/TRABAJOR/test.csv") 
+
+
+
+```
+
+### Leer datos filas y columnas del archivo train que contiene los datos de una semana
+
+
+```{r}
+nrow(train)
+
+ncol(train)
+
+```
+```{r}
+names(train)
+
+```
+
+```{r}
+
+head(train, 20)
+
+```
+
+```{r}
+
+tail(train, 20)
+
+```
+```{r}
+summary(train)
+
+```
+```{r}
+
+str(train)
+
+```
+# .
+
+### Vamos a retirar de la tabla todas las observaciones en las que no hay informacion para la variable meal_id
+
+```{r}
+
+sum(is.na(train$meal_id))
+
+```
+# .
+
+### Distribucion de la variable de respuesta
+
+```{r}
+
+ggplot(data = train, aes(x = meal_id)) +
+  geom_histogram(color = "white", fill = "blue") +
+  labs(title = "Distribución Comidas") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+### La distribucion de la variable Meal Id no es una distribución normal por lo que se procederá a normalizarla.
+
+```{r}
+
+train$meal_id <- log(train$meal_id)
+
+ggplot(data = train, aes(x = meal_id)) + geom_histogram(color = "white", fill = "black") + labs(title = "Distribución log(meal_id)") +  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+# ARBOL DE REGRESION SIMPLE
+
+```{r}
+
+library(tree)
+
+# Selección de parámetros para el árbol
+
+setup <- tree.control(nobs = nrow(train), mincut = 10, minsize = 20,mindev = 0.01)
+
+modelo_arbolR <- tree(meal_id ~ ., data = train, split = "deviance", control = setup)
+
+summary(modelo_arbolR)
+
+```
+# .
+
+### Según la información devuelta, del conjunto de las 8 variables, el modelo ha utilizado para generar el árbol solo 1 nodos interno: base_price. Con esta variable el número de nodos terminales es 7. 
+
+# PLOTEO DEL ARBOL
+
+```{r}
+
+plot(modelo_arbolR, type = "proportional") 
+
+
+text(modelo_arbolR, splits = TRUE, pretty = 0, cex = 0.8, col = "red")
+
+
+
+```
+
+```{r}
+
+modelo_arbolR
+
+```
+
+# PREDICCIONES DEL MODELO
+
+```{r}
+
+predicciones <- predict(modelo_arbolR, newdata = train)
+
+plot(x= predicciones, y = train$meal_id, main = "Prediccion vs Real", xlab = "Predicciones", ylab = "Tipo de comida")
+
+
+
+```
+
